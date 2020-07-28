@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:id="@+id/navigation"
+    app:startDestination="@id/championsViewFragment">
+
+    <fragment
+        android:id="@+id/championsViewFragment"
+        android:name="com.kaito.afinal.championsviews.ChampionsViewFragment"
+        android:label="ChampionsViewFragment" >
+        <action
+            android:id="@+id/action_championsViewFragment_to_championsDetailFragment"
+            app:destination="@id/championsDetailFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/championsDetailFragment"
+        android:name="com.kaito.afinal.championsDetails.ChampionsDetailFragment"
+        android:label="ChampionsDetailFragment" >
+        <argument
+            android:name="selectedChampion"
+            app:argType="string" />
+    </fragment>
+    <fragment
+        android:id="@+id/favouriteFragment"
+        android:name="com.kaito.afinal.favourite.FavouriteFragment"
+        android:label="FavouriteFragment" >
+        <action
+            android:id="@+id/action_favouriteFragment_to_championsDetailFragment"
+            app:destination="@id/championsDetailFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/profileFragment"
+        android:name="com.kaito.afinal.profile.ProfileFragment"
+        android:label="ProfileFragment" >
+        <action
+            android:id="@+id/action_profileFragment_to_championsViewFragment"
+            app:destination="@id/championsViewFragment" />
+    </fragment>
+</navigation>
