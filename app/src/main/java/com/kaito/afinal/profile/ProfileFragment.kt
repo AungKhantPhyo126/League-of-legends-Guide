@@ -17,7 +17,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
 import com.bumptech.glide.Glide
 import com.firebase.ui.auth.AuthUI
@@ -33,9 +36,13 @@ import java.io.ByteArrayOutputStream
 class ProfileFragment : Fragment() {
     private lateinit var binding: FragmentProfileBinding
     private val db = Firebase.firestore
-    private val docRef =
-        db.collection("lol_database").document("${FirebaseAuth.getInstance().currentUser?.uid}")
+    private val viewModel by viewModels<ProfileViewModel>()
 
+    private val providers = arrayListOf(
+        AuthUI.IdpConfig.EmailBuilder().build(),
+        AuthUI.IdpConfig.PhoneBuilder().build(),
+        AuthUI.IdpConfig.GoogleBuilder().build()
+    )
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -47,74 +54,69 @@ class ProfileFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         binding = FragmentProfileBinding.inflate(inflater)
-        val user = FirebaseAuth.getInstance().currentUser
 
-        if (user?.displayName != null) {
-            binding.tvUserName.setText(user.displayName)
-        }
-        if(user?.displayName==null && user?.phoneNumber!=null){
-            binding.tvUserName.setText(user.phoneNumber)
-        }
-        if (user?.email != null) {
-            binding.tvEmail.setText(user.email)
-        }
-        if (user?.phoneNumber!=null){
-            binding.tvPhone.setText(user.phoneNumber)
-        }
-        if (user?.photoUrl==null) {
-            bindProfilePicture(
-                binding.ivProfilePic,
-                "https://www.thepeakid.com/wp-content/uploads/2016/03/default-profile-picture.jpg"
-            )
-        }else{}
-        docRef.addSnapshotListener { snapshot, e ->
-            if (e != null) {
-                return@addSnapshotListener
-            }
-
-            if (snapshot != null && snapshot.exists()) {
-                bindProfilePicture(binding.ivProfilePic, snapshot.data?.get("photoUrl").toString())
-
-            } else {
-
-            }
-        }
-        binding.tvLogout.setOnClickListener {
-            logout()
+        binding.tvLogin.setOnClickListener {
+            signingProgress()
         }
         binding.ivLogout.setOnClickListener {
             logout()
         }
-        binding.ivChangeProfilePic.setOnClickListener {
+        binding.tvLogout.setOnClickListener {
+            logout()
+        }
+        binding.tvChangeProfilePic.setOnClickListener {
             selectImage(requireContext())
         }
         return binding.root
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
+    override fun onStart() {
+        super.onStart()
+        switchLogInView()
 
+        viewModel.getUserData()
+
+        viewModel.profilePhoto.observe(viewLifecycleOwner, Observer {
+            bindProfilePicture(binding.ivProfilePic, it)
+        })
+
+        viewModel.displayName.observe(viewLifecycleOwner, Observer {
+            binding.tvUserName.text = it.toString()
+        })
+        viewModel.phoneNo.observe(viewLifecycleOwner, Observer {
+            if (it == null) {
+                binding.tvPhone.isVisible = false
+                binding.tvPhoneTitle.isVisible = false
+                binding.ivPhone.isVisible=false
+            } else {
+                binding.tvPhone.isVisible = true
+                binding.tvPhone.setText(it.toString())
+                binding.tvPhoneTitle.isVisible = true
+                binding.ivPhone.isVisible=true
+            }
+            binding.tvPhone.text = it.toString()
+        })
+
+        viewModel.email.observe(viewLifecycleOwner, Observer {
+            if (it == null) {
+                binding.tvEmailTitle.isVisible = false
+                binding.tvEmail.isVisible = false
+                binding.ivEmail.isVisible=false
+            } else {
+                binding.tvEmailTitle.isVisible = true
+                binding.tvEmail.isVisible = true
+                binding.ivEmail.isVisible=true
+                binding.tvEmail.text=it.toString()
+            }
+            binding.tvEmail.text = it.toString()
+        })
     }
 
     fun logout() {
         AuthUI.getInstance()
             .signOut(requireContext())
             .addOnSuccessListener {
-                val providers = arrayListOf(
-                    AuthUI.IdpConfig.EmailBuilder().build(),
-                    AuthUI.IdpConfig.PhoneBuilder().build(),
-                    AuthUI.IdpConfig.GoogleBuilder().build()
-                )
-// Create and launch sign-in intent
-                startActivityForResult(
-                    AuthUI.getInstance()
-                        .createSignInIntentBuilder()
-                        .setAvailableProviders(providers)
-                        .build(), 101
-                )
-                this.findNavController().navigate(
-                    ProfileFragmentDirections.actionProfileFragmentToChampionsViewFragment()
-                )
+                switchLogInView()
             }
             .addOnFailureListener {
                 Log.i("logout", "fail tl")
@@ -128,26 +130,44 @@ class ProfileFragment : Fragment() {
                 .into(imgView)
         }
     }
+    fun signingProgress() {
+// Create and launch sign-in intent
+        startActivityForResult(
+            AuthUI.getInstance()
+                .createSignInIntentBuilder()
+                .setAvailableProviders(providers)
+                .build(), 101
+        )
+    }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode != AppCompatActivity.RESULT_CANCELED) {
             when (requestCode) {
                 101 -> if (resultCode == Activity.RESULT_OK && data != null) {
-                    val user = FirebaseAuth.getInstance().currentUser
-                    val name=FirebaseAuth.getInstance().currentUser?.displayName
-                    val email=FirebaseAuth.getInstance().currentUser?.email
+                    saveUserData()
+//                    FirebaseAuth.getInstance().currentUser?.uid?.let {
+//                        docRef1.document(it).get().addOnCompleteListener { document ->
+//                            if (!document.result.exists()) {
+//                                // Successfully signed in
+//                                bindUserData()
+//                            }
+//                        }
+//                    }
 //        val photo=FirebaseAuth.getInstance().currentUser?.photoUrl
-                    val userdata= hashMapOf("UserName" to name,"email" to email,"favoriteList" to listOf<String>())
-                    docRef.set(userdata, SetOptions.merge())
-//                    val leeUser = hashMapOf("photo" to (user?.photoUrl ?: ""))
+//                    val userdata = hashMapOf(
+//                        "UserName" to name,
+//                        "email" to email,
+//                        "favoriteList" to listOf<String>()
+//                    )
+//                    docRef.set(userdata, SetOptions.merge())
                 }
-                0-> if (resultCode == RESULT_OK && data != null) {
+                0 -> if (resultCode == RESULT_OK && data != null) {
                     val selectedImage = data.extras!!["data"] as Bitmap?
                     val storageRef = Firebase.storage.reference
                     val userRef = storageRef.child("images/profile.jpg")
 
-                    val iv_profilePic=binding.ivProfilePic
+                    val iv_profilePic = binding.ivProfilePic
                     iv_profilePic.setImageBitmap(selectedImage)
                     iv_profilePic.isDrawingCacheEnabled = true
                     iv_profilePic.buildDrawingCache()
@@ -157,15 +177,16 @@ class ProfileFragment : Fragment() {
                     val data = baos.toByteArray()
                     var uploadTask = userRef.putBytes(data)
                     uploadTask.addOnSuccessListener {
-                        val uri=userRef.downloadUrl.addOnSuccessListener {
-                            val photo= hashMapOf("photoUrl" to it.toString())
-                            db.collection("lol_database").document("${FirebaseAuth.getInstance().currentUser?.uid}")
+                        val uri = userRef.downloadUrl.addOnSuccessListener {
+                            val photo = hashMapOf("photoUrl" to it.toString())
+                            db.collection("lol_database")
+                                .document("${FirebaseAuth.getInstance().currentUser?.uid}")
                                 .set(photo, SetOptions.merge())
-                                .addOnSuccessListener { Log.i("database","success") }
-                                .addOnFailureListener {  Log.i("database","fail")  }
+                                .addOnSuccessListener { Log.i("database", "success") }
+                                .addOnFailureListener { Log.i("database", "fail") }
                             Log.i("uploadSuccess", "${userRef.downloadUrl}")
                         }
-                            .addOnFailureListener {  Log.i("database","FailP Hayyyy")  }
+                            .addOnFailureListener { Log.i("database", "FailP Hayyyy") }
                     }
                     uploadTask.addOnFailureListener {
                         Log.e("uploadError", "Upload Failed")
@@ -174,6 +195,28 @@ class ProfileFragment : Fragment() {
             }
         }
     }
+
+    fun switchLogInView(){
+        if(FirebaseAuth.getInstance().currentUser==null){
+            binding.ivPhone.isVisible=false
+            binding.tvPhoneTitle.isVisible=false
+            binding.tvPhone.isVisible=false
+            binding.tvEmailTitle.isVisible=false
+            binding.tvEmail.isVisible=false
+            binding.ivEmail.isVisible=false
+            binding.tvUserName.isVisible=false
+            binding.ivProfilePic.isVisible=false
+            binding.ivChangeProfilePic.isVisible=false
+            binding.ivLogout.isVisible=false
+            binding.tvLogout.isVisible=false
+            binding.tvChangeProfilePic.isVisible=false
+        }else{
+            binding.tvLogin.isVisible=false
+
+        }
+    }
+
+
 
     fun selectImage(context: Context) {
         val options =
@@ -197,12 +240,15 @@ class ProfileFragment : Fragment() {
         })
         builder.show()
     }
-//    fun setName(){
-//        docRef.get().addOnSuccessListener {
-//            val name=it.data?.get("UserName")
-//            if (name==null){
-//                binding.tvUserName.setText(user)
-//            }
-//        }
-//    }
+    fun saveUserData() {
+        val userRef =
+            db.collection("lol_database").document("${FirebaseAuth.getInstance().currentUser?.uid}")
+        val name = FirebaseAuth.getInstance().currentUser?.displayName
+        val email = FirebaseAuth.getInstance().currentUser?.email
+        val phone=FirebaseAuth.getInstance().currentUser?.phoneNumber
+        val photo=FirebaseAuth.getInstance().currentUser?.photoUrl?.toString() ?: "https://bit.ly/39GLBSV"
+        val userdata =
+            hashMapOf("photoUrl" to photo,"UserName" to name, "email" to email,"phone" to phone, "favoriteList" to listOf<String>())
+        userRef.set(userdata, SetOptions.merge())
+    }
 }

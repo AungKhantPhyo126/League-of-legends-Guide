@@ -154,6 +154,16 @@
             app:layout_constraintStart_toEndOf="@+id/iv_logout"
             app:layout_constraintTop_toTopOf="@+id/iv_logout" />
 
+        <TextView
+            android:id="@+id/tv_login"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Please LogIn to use Favorite Feature"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>
