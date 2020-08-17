@@ -30,9 +30,5 @@
     <fragment
         android:id="@+id/profileFragment"
         android:name="com.kaito.afinal.profile.ProfileFragment"
-        android:label="ProfileFragment" >
-        <action
-            android:id="@+id/action_profileFragment_to_championsViewFragment"
-            app:destination="@id/championsViewFragment" />
-    </fragment>
+        android:label="ProfileFragment" />
 </navigation>

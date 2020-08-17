@@ -81,7 +81,13 @@ class ChampionsDetailFragment : Fragment() {
         })
         binding.viewModel = viewModel
         animationView?.setOnClickListener {
-            toogleFavorite()
+            if (FirebaseAuth.getInstance().currentUser==null){
+                Toast.makeText(
+                    requireContext(), "Please log in to give favorite!", Toast.LENGTH_LONG
+                ).show()
+            }else{
+                toogleFavorite()
+            }
         }
 //        if (isCOntainInList==true){
 //            binding.ivFavourite?.setImageResource(R.drawable.ic_baseline_favorite_24)

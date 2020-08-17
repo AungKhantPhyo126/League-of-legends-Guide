@@ -59,13 +59,6 @@ import java.io.ByteArrayOutputStream
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private val db = Firebase.firestore
-    private val docRef =
-        db.collection("lol_database").document("${FirebaseAuth.getInstance().currentUser?.uid}")
-
-    override fun onStart() {
-        super.onStart()
-        signingProgress()
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -164,95 +157,9 @@ class MainActivity : AppCompatActivity() {
             })
     }
 
-    fun signingProgress() {
-        if (FirebaseAuth.getInstance().currentUser == null) {
-            // Choose authentication providers
-            val providers = arrayListOf(
-                AuthUI.IdpConfig.EmailBuilder().build(),
-                AuthUI.IdpConfig.PhoneBuilder().build(),
-                AuthUI.IdpConfig.GoogleBuilder().build()
-            )
 
-// Create and launch sign-in intent
-            startActivityForResult(
-                AuthUI.getInstance()
-                    .createSignInIntentBuilder()
-                    .setAvailableProviders(providers)
-                    .build(), 101
-            )
-        } else {
-//            bindUserData()
-        }
-    }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
 
-        if (resultCode != RESULT_CANCELED) {
-            when (requestCode) {
-                101 -> if (resultCode == Activity.RESULT_OK && data != null) {
-                    val user = FirebaseAuth.getInstance().currentUser
-//                    val leeUser = hashMapOf("photo" to (user?.photoUrl ?: ""))
-                    bindUserData()
-                }
-//                0 -> if (resultCode == RESULT_OK && data != null) {
-//                    val selectedImage = data.extras!!["data"] as Bitmap?
-//                    val storageRef = Firebase.storage.reference
-//                    val userRef = storageRef.child("images/profile.jpg")
-//                    val navView = binding.navView
-//                    val headerView = navView.getHeaderView(0)
-//                    val iv_profilePic=headerView.profile_pic
-//                    iv_profilePic.setImageBitmap(selectedImage)
-//                    iv_profilePic.isDrawingCacheEnabled = true
-//                    iv_profilePic.buildDrawingCache()
-//                    val bitmap = (iv_profilePic.drawable as BitmapDrawable).bitmap
-//                    val baos = ByteArrayOutputStream()
-//                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos)
-//                    val data = baos.toByteArray()
-//                    var uploadTask = userRef.putBytes(data)
-//                    uploadTask.addOnSuccessListener {
-//                        val uri=userRef.downloadUrl.addOnSuccessListener {
-//                            val photo= hashMapOf("photoUrl" to it.toString())
-//                            db.collection("lol_database").document("${FirebaseAuth.getInstance().currentUser?.uid}")
-//                                .set(photo, SetOptions.merge())
-//                                .addOnSuccessListener { Log.i("database","success") }
-//                                .addOnFailureListener {  Log.i("database","fail")  }
-//                            Log.i("uploadSuccess", "${userRef.downloadUrl}")
-//                        }
-//                            .addOnFailureListener {  Log.i("database","FailP Hayyyy")  }
-//                    }
-//                    uploadTask.addOnFailureListener {
-//                        Log.e("uploadError", "Upload Failed")
-//                    }
-//                }
-//                1 -> if (resultCode == RESULT_OK && data != null) {
-//                    val selectedImage: Uri? = data.data
-//                    val filePathColumn =
-//                        arrayOf(MediaStore.Images.Media.DATA)
-//                    if (selectedImage != null) {
-//                        val cursor: Cursor? = getContentResolver().query(
-//                            selectedImage,
-//                            filePathColumn, null, null, null
-//                        )
-//                        if (cursor != null) {
-//                            cursor.moveToFirst()
-//                            val columnIndex: Int = cursor.getColumnIndex(filePathColumn[0])
-//                            val picturePath: String = cursor.getString(columnIndex)
-//                            imageView.setImageBitmap(BitmapFactory.decodeFile(picturePath))
-//                            cursor.close()
-//                        }
-//                    }
-//                }
-            }
-        }
-    }
 
-    fun bindUserData() {
-        val name = FirebaseAuth.getInstance().currentUser?.displayName
-        val email = FirebaseAuth.getInstance().currentUser?.email
-//        val photo=FirebaseAuth.getInstance().currentUser?.photoUrl
-        val userdata =
-            hashMapOf("UserName" to name, "email" to email, "favoriteList" to listOf<String>())
-        docRef.set(userdata, SetOptions.merge())
-    }
+
 }
