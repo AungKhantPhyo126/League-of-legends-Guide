@@ -17,28 +17,19 @@ class ChampionViewModel(application: Application) : AndroidViewModel(application
     private val database = getDatabase(application)
     private val championsRepository = ChampionsRepository(database)
 
-    private val _navigateToSelectedChampion=MutableLiveData<Champions>()
-    val navigateToSelectedChampion:LiveData<Champions>
-    get() = _navigateToSelectedChampion
+    private val roleLive = MutableLiveData<String>("All")
 
-    fun displayChampionDetail(champion: Champions) {
-        _navigateToSelectedChampion.value = champion
-    }
-    fun displayChampionDetailComplete() {
-        _navigateToSelectedChampion.value = null
-    }
+    val champions = roleLive.distinctUntilChanged()
+        .switchMap { championsRepository.getChampions(it) }
 
-    private val roleLive= MutableLiveData<String>()
-    val champions= roleLive.distinctUntilChanged()
-        .switchMap { championsRepository.filterChanged(it) }
     init {
         viewModelScope.launch {
-            championsRepository.refreshChampions()
+            championsRepository.fetchChampions()
         }
     }
 
     fun filter(role: String) {
-        roleLive.value=role
+        roleLive.value = role
     }
 }
 
