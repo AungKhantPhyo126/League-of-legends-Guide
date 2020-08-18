@@ -2,6 +2,7 @@ package com.kaito.afinal.profile
 
 import android.app.Application
 import android.content.ContentValues.TAG
+import android.graphics.Bitmap
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
@@ -12,41 +13,36 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.kaito.afinal.database.getDatabase
 import com.kaito.afinal.repository.ChampionsRepository
+import com.kaito.afinal.repository.Profile
+import com.kaito.afinal.repository.UserRepository
 
 class ProfileViewModel(application: Application) :AndroidViewModel(application){
-    private val _profilePhoto = MutableLiveData<String>()
-    val profilePhoto: LiveData<String>
-        get() = _profilePhoto
 
-    private val _displayName = MutableLiveData<String>()
-    val displayName: LiveData<String>
-        get() = _displayName
+    private val userRepository = UserRepository(application)
 
-    private val _phoneNo = MutableLiveData<String>()
-    val phoneNo: LiveData<String>
-        get() = _phoneNo
+    val profile = userRepository.getUserData()
 
-    private val _email = MutableLiveData<String?>()
-    val email: LiveData<String?>
-        get() = _email
-    fun getUserData() {
-        FirebaseAuth.getInstance().currentUser?.uid?.let {
-            Firebase.firestore.collection("lol_database").document(it).addSnapshotListener { snapshot, e ->
-                if (e != null) {
-                    Log.i(TAG, "Listen failed.", e)
-                    return@addSnapshotListener
-                }
+    val isLoggedOut = MutableLiveData<Boolean>(userRepository.isLoggedIn().not())
 
-                if (snapshot != null && snapshot.exists()) {
-                    Log.i(TAG, "Current data: ${snapshot.data}")
-                    _profilePhoto.value = snapshot.data?.get("photoUrl").toString()
-                    _displayName.value = snapshot.data?.get("phone").toString() ?: snapshot.data?.get("UserName").toString()
-                    _email.value = snapshot.data?.get("email").toString()
-                    _phoneNo.value=snapshot.data?.get("phone").toString()
-                } else {
-                    Log.i(TAG, "Current data: null")
-                }
-            }
+    fun refreshLoginStatus() {
+        isLoggedOut.value = isLoggedIn().not()
+    }
+
+    fun uploadImage(bimap: Bitmap) {
+        userRepository.uploadImage(bimap)
+    }
+
+    fun login() {
+        userRepository.login {
+            refreshLoginStatus()
         }
     }
+
+    fun logout() {
+        userRepository.logout {
+            refreshLoginStatus()
+        }
+    }
+
+    private fun isLoggedIn() = userRepository.isLoggedIn()
 }

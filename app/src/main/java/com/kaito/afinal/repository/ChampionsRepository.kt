@@ -1,15 +1,14 @@
 package com.kaito.afinal.repository
 
-import android.net.Network
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Transformations
+import androidx.lifecycle.map
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.kaito.afinal.database.ChampionsDatabase
-import com.kaito.afinal.database.DatabaseChampions
 import com.kaito.afinal.database.asDomainModel
 import com.kaito.afinal.domain.Champions
 import com.kaito.afinal.network.LolApi
@@ -19,35 +18,51 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-
 class ChampionsRepository(private val database: ChampionsDatabase) {
-    val db = Firebase.firestore
-    val champions: LiveData<List<Champions>> =
-        Transformations.map(database.championsDao.getChampions()) {
-            it.asDomainModel()
-        }
 
+    private val db = Firebase.firestore
 
-    suspend fun refreshDetails(name: String) {
+    suspend fun fetchChampions() {
         withContext(Dispatchers.IO) {
             try {
-                val championDetail = LolApi.retrofitService.getSpells(name).await().let {
-                    it.asDatabase()
-                }
-                database.championsDao.insertChampion(championDetail[0])
+                val champions = LolApi.retrofitService.getProperties().asDatabase()
+                database.championsDao.insertAll(champions)
             } catch (e: Throwable) {
                 Log.e("lee", e.message)
             }
         }
     }
 
-    fun getChampion(name: String): LiveData<Champions> {
-        return database.championsDao.getChampion(name).let {
-            Transformations.map(it, {
-                it.asDomainModel()
-            })
+    fun getChampions(roles: String) = database.championsDao.getFilteredChampions("%$roles%")
+        .map { it.asDomainModel() }
+
+
+
+
+
+
+
+
+
+
+
+    suspend fun refreshDetails(name: String) {
+        try {
+            val championDetail = LolApi.retrofitService.getSpells(name).asDatabase()
+            database.championsDao.insertChampion(championDetail[0])
+        } catch (e: Throwable) {
+            Log.e("lee", e.message)
         }
     }
+
+    fun getChampion(name: String) = database.championsDao.getChampion(name).map {
+        it.asDomainModel()
+    }
+
+
+
+
+
 
     fun getFavoriteChampions(): MutableLiveData<List<Champions>> {
         val favoriteList = MutableLiveData<List<Champions>>()
@@ -70,43 +85,10 @@ class ChampionsRepository(private val database: ChampionsDatabase) {
                         favoriteList.postValue(it)
                     }
                 }
-            }else{}
-            }
-//        docRef.get().addOnSuccessListener {document->
-//            GlobalScope.launch {
-//                val list=document.data?.get("favoriteList") as List<String>
-//                list.map {
-//                    database.championsDao.getFavoriteByName(it).let {entity->
-//                        entity.asDomainModel()
-//                    }
-//                }.also {
-//                    favoriteList.postValue(it)
-//                }
-//            }
-////        }
-//            .addOnFailureListener {  }
-            return favoriteList
-        }
-
-
-        suspend fun refreshChampions() {
-            withContext(Dispatchers.IO) {
-                try {
-                    val championlist = LolApi.retrofitService.getProperties().await().let {
-                        it.asDatabase()
-                    }
-                    database.championsDao.insertAll(championlist)
-                } catch (e: Throwable) {
-                    Log.e("lee", e.message)
-                }
+            } else {
             }
         }
-
-        fun filterChanged(roles: String): LiveData<List<Champions>> {
-            return database.championsDao.getFilteredChampions("%$roles%").let {
-                Transformations.map(it, {
-                    it.asDomainModel()
-                })
-            }
-        }
+        return favoriteList
     }
+
+}

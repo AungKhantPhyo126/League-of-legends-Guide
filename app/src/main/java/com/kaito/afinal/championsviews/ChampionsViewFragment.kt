@@ -30,9 +30,11 @@ import kotlinx.android.synthetic.main.fragment_champions.*
 
 
 class ChampionsViewFragment : Fragment() {
-    private lateinit var auth: FirebaseAuth
+
     val viewModel: ChampionViewModel by viewModels()
+    private lateinit var binding: FragmentChampionsBinding
     var currentFilter = "All"
+
     override fun onSaveInstanceState(outState: Bundle) {
         outState.putString("filter", currentFilter)
         super.onSaveInstanceState(outState)
@@ -42,55 +44,47 @@ class ChampionsViewFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ) = FragmentChampionsBinding.inflate(inflater, container, false).also {
+        binding = it
+    }.root
 
-        val adapter =
-            ChampionsAdapter(ChampionsAdapter.OnClickListener { champion, clickedImageView ->
-                val extras2 = FragmentNavigator.Extras.Builder().addSharedElements(
-                    mapOf(
-                        clickedImageView!! to getString(R.string.transition_name)
-                    )
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
-                ).build()
-                val extras = FragmentNavigatorExtras(
-                    clickedImageView!! to getString(R.string.transition_name)
-                )
-                this.findNavController().navigate(
-                    ChampionsViewFragmentDirections.actionChampionsViewFragmentToChampionsDetailFragment(
-                        champion.championsName
-                    ),
-
-                    extras2
-                )
-//            viewModel.displayChampionDetail(champion)
-            })
-        val binding = FragmentChampionsBinding.inflate(inflater, container, false)
-        binding.championsList.adapter = adapter
-        viewModel.navigateToSelectedChampion.observe(viewLifecycleOwner, Observer {
-            if (null != it) {
-
-                viewModel.displayChampionDetailComplete()
-            }
-        })
+        // get current filter from savedInstanceState
         currentFilter = savedInstanceState?.getString("filter") ?: "All"
-        viewModel.filter(currentFilter)
-        binding.chipGroup.setOnCheckedChangeListener { group, checkedId ->
-            when (checkedId) {
-                R.id.Fighter -> "Fighter"
-                R.id.Tank -> "Tank"
-                R.id.Mage -> "Mage"
-                R.id.Support -> "Support"
-                R.id.Assassin -> "Assassin"
-                R.id.Marksman->"Marksman"
-                else -> "All"
-            }.also {
+
+        // prepare list
+        val adapter = ChampionsAdapter(ChampionsAdapter.OnClickListener { champion, _ ->
+            findNavController().navigate(
+                ChampionsViewFragmentDirections
+                    .actionChampionsViewFragmentToChampionsDetailFragment(champion.championsName)
+            )
+        })
+        binding.championsList.adapter = adapter
+
+        // prepare filters
+        binding.chipGroup.setOnCheckedChangeListener { _, checkedId ->
+            getFilterFromId(checkedId).also {
                 viewModel.filter(it)
                 currentFilter = it
             }
         }
+
         viewModel.champions.observe(viewLifecycleOwner, Observer {
             adapter.submitList(it)
         })
-        return binding.root
+
+        viewModel.filter(currentFilter)
+    }
+
+    private fun getFilterFromId(id: Int) = when (id) {
+        R.id.Fighter -> "Fighter"
+        R.id.Tank -> "Tank"
+        R.id.Mage -> "Mage"
+        R.id.Support -> "Support"
+        R.id.Assassin -> "Assassin"
+        R.id.Marksman -> "Marksman"
+        else -> "All"
     }
 }
