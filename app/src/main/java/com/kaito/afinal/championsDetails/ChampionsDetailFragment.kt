@@ -33,10 +33,10 @@ import kotlinx.android.synthetic.main.fragment_championsdetail.view.animationVie
 
 class ChampionsDetailFragment : Fragment() {
     private lateinit var binding: FragmentChampionsdetailBinding
-    private val db = Firebase.firestore
-    private val docRef =
-        db.collection("lol_database").document("${FirebaseAuth.getInstance().currentUser?.uid}")
-    private var isCOntainInList = false
+    private val application = requireNotNull(activity).application
+    private val name = ChampionsDetailFragmentArgs.fromBundle(requireArguments()).selectedChampion
+    private val viewModelFactory = ChampionsDetailViewModelFactory(name, application)
+    private val viewModel: ChampionsDetailViewModel by viewModels { viewModelFactory }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -53,14 +53,11 @@ class ChampionsDetailFragment : Fragment() {
             duration = 750
         }
         @Suppress("UNUSED_VARIABLE")
-        val application = requireNotNull(activity).application
         val animationView = binding.animationView
 
 
         binding.setLifecycleOwner(this)
-        val name = ChampionsDetailFragmentArgs.fromBundle(requireArguments()).selectedChampion
-        val viewModelFactory = ChampionsDetailViewModelFactory(name, application)
-        val viewModel: ChampionsDetailViewModel by viewModels { viewModelFactory }
+
         viewModel.isFavorite.observe(viewLifecycleOwner, Observer {
             if (it) {
                 animationView?.setMinAndMaxFrame(45, 45)
@@ -82,6 +79,7 @@ class ChampionsDetailFragment : Fragment() {
         binding.viewModel = viewModel
         animationView?.setOnClickListener {
             if (FirebaseAuth.getInstance().currentUser==null){
+                animationView?.setMinAndMaxFrame(0, 45)
                 Toast.makeText(
                     requireContext(), "Please log in to give favorite!", Toast.LENGTH_LONG
                 ).show()
@@ -101,28 +99,42 @@ class ChampionsDetailFragment : Fragment() {
     }
 
     fun toogleFavorite() {
-        docRef.get().addOnSuccessListener { document ->
-            val favHeroes = document.data?.get("favoriteList")
-            favHeroes as List<String>
-            isCOntainInList = favHeroes.contains(binding.champName.text.toString())
-            if (isCOntainInList == false) {
-                animationView?.setMinAndMaxFrame(0, 45)
-                animationView?.speed = 1f
-                animationView?.playAnimation()
-                docRef.update(
-                    "favoriteList",
-                    FieldValue.arrayUnion(binding.champName.text.toString())
-                )
-            } else {
+        val name=binding.champName.text.toString()
+        viewModel.isFavorite.observe(viewLifecycleOwner, Observer {
+            if (it==true){
                 animationView?.speed = -1f
                 animationView?.resumeAnimation()
                 animationView?.setMinAndMaxFrame(10, 60)
-                docRef.update(
-                    "favoriteList",
-                    FieldValue.arrayRemove(binding.champName.text.toString())
-                )
+                viewModel.removefav(name)
+            }else{
+                animationView?.setMinAndMaxFrame(0, 45)
+                animationView?.speed = 1f
+                animationView?.playAnimation()
+                viewModel.addfav(name)
             }
-        }
+        })
+//        var isCOntainInList = false
+//        docRef.get().addOnSuccessListener { document ->
+//            val favHeroes = document.data?.get("favoriteList")
+//            favHeroes as List<String>
+//            isCOntainInList = favHeroes.contains(binding.champName.text.toString())
+//            if (isCOntainInList == false) {
+//                animationView?.setMinAndMaxFrame(0, 45)
+//                animationView?.speed = 1f
+//                animationView?.playAnimation()
+//                docRef.update(
+//                    "favoriteList",
+//                    FieldValue.arrayUnion(binding.champName.text.toString())
+//                )
+//            } else {
+//                animationView?.speed = -1f
+//                animationView?.resumeAnimation()
+//                animationView?.setMinAndMaxFrame(10, 60)
+//                docRef.update(
+//                    "favoriteList",
+//                    FieldValue.arrayRemove(binding.champName.text.toString())
+//                )
+//            }
+//        }
     }
-
 }

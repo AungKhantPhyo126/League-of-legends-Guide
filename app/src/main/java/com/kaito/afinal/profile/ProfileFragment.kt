@@ -22,9 +22,11 @@ import androidx.lifecycle.observe
 import androidx.navigation.fragment.findNavController
 import com.bumptech.glide.Glide
 import com.firebase.ui.auth.AuthUI
+import com.github.dhaval2404.imagepicker.ImagePicker
 
 import com.kaito.afinal.databinding.FragmentProfileBinding
 import com.kaito.afinal.repository.Profile
+import java.io.File
 
 class ProfileFragment : Fragment() {
 
@@ -95,19 +97,6 @@ class ProfileFragment : Fragment() {
                 101 -> if (resultCode == Activity.RESULT_OK && data != null) {
                     viewModel.login()
                 }
-                200, 201 -> if (resultCode == RESULT_OK && data != null) {
-                    val selectedImage = data.extras?.get("data") as Bitmap?
-                    selectedImage?.also {
-                        with(binding.ivProfilePic) {
-                            setImageBitmap(it)
-                            isDrawingCacheEnabled = true
-                            buildDrawingCache()
-                            (drawable as? BitmapDrawable)?.bitmap?.let {
-                                viewModel.uploadImage(it)
-                            }
-                        }
-                    }
-                }
             }
         }
     }
@@ -127,25 +116,16 @@ class ProfileFragment : Fragment() {
     }
 
     private fun selectImage(context: Context) {
-        val options =
-            arrayOf("Take Photo", "Choose from Gallery", "Cancel")
-        val builder: AlertDialog.Builder = AlertDialog.Builder(context)
-        builder.setTitle("Choose your profile picture")
-        builder.setItems(options, DialogInterface.OnClickListener { dialog, item ->
-            if (options[item] == "Take Photo") {
-                val takePicture =
-                    Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-                startActivityForResult(takePicture, 200)
-            } else if (options[item] == "Choose from Gallery") {
-                val pickPhoto = Intent(
-                    Intent.ACTION_PICK,
-                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-                )
-                startActivityForResult(pickPhoto, 201)
-            } else if (options[item] == "Cancel") {
-                dialog.dismiss()
+        ImagePicker.with(this).start { resultCode, data ->
+            if (resultCode==Activity.RESULT_OK){
+                val fileUri = data?.data
+
+                binding.ivProfilePic.setImageURI(fileUri)
+                val file: File?= ImagePicker.getFile(data)
+                file?.let {
+                    viewModel.uploadImage(it)
+                }
             }
-        })
-        builder.show()
+        }
     }
 }

@@ -49,11 +49,9 @@ class FavouriteFragment :Fragment(){
                 FavouriteFragmentDirections.actionFavouriteFragmentToChampionsDetailFragment(
                     champion.championsName
                 ),
-
                 extras2
             )
         })
-
 
         binding.favouriteChampionsList.adapter=adapter
         viewModel.favoriteChampionsList.observe(viewLifecycleOwner, Observer {
@@ -66,8 +64,6 @@ class FavouriteFragment :Fragment(){
             binding.viewModel=viewModel
             adapter.submitList(it)
         })
-
-
         return binding.root
     }
 

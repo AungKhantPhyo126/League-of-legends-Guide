@@ -15,6 +15,7 @@ import com.kaito.afinal.database.getDatabase
 import com.kaito.afinal.repository.ChampionsRepository
 import com.kaito.afinal.repository.Profile
 import com.kaito.afinal.repository.UserRepository
+import java.io.File
 
 class ProfileViewModel(application: Application) :AndroidViewModel(application){
 
@@ -28,8 +29,8 @@ class ProfileViewModel(application: Application) :AndroidViewModel(application){
         isLoggedOut.value = isLoggedIn().not()
     }
 
-    fun uploadImage(bimap: Bitmap) {
-        userRepository.uploadImage(bimap)
+    fun uploadImage(file:File) {
+        userRepository.uploadImage(file)
     }
 
     fun login() {

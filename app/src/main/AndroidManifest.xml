@@ -3,6 +3,7 @@
     package="com.kaito.afinal">
     <uses-permission android:name="android.permission.INTERNET" />
     <application
+        android:requestLegacyExternalStorage="true"
         android:usesCleartextTraffic="true"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"

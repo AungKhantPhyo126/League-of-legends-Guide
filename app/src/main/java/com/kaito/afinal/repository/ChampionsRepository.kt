@@ -6,6 +6,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Transformations
 import androidx.lifecycle.map
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.kaito.afinal.database.ChampionsDatabase
@@ -91,4 +92,38 @@ class ChampionsRepository(private val database: ChampionsDatabase) {
         return favoriteList
     }
 
+    fun addfav(name:String){
+        val docRef =
+            db.collection("lol_database").document("${FirebaseAuth.getInstance().currentUser?.uid}")
+        docRef.update(
+                    "favoriteList",
+                    FieldValue.arrayUnion(name)
+                )
+    }
+
+    fun removefav(name: String){
+        val docRef =
+            db.collection("lol_database").document("${FirebaseAuth.getInstance().currentUser?.uid}")
+        docRef.update(
+                    "favoriteList",
+                    FieldValue.arrayRemove(name)
+                )
+    }
+
+    fun isfav(keyName:String):MutableLiveData<Boolean>{
+        val _isFavorite = MutableLiveData<Boolean>()
+        val docRef =
+            db.collection("lol_database").document("${FirebaseAuth.getInstance().currentUser?.uid}")
+        docRef.get().addOnSuccessListener { document ->
+            val favHeroes = document.data?.get("favoriteList")
+            favHeroes as List<String>
+            if (favHeroes.contains(keyName)) {
+                _isFavorite.value = true
+            } else {
+                _isFavorite.value = false
+            }
+
+        }
+        return _isFavorite
+    }
 }

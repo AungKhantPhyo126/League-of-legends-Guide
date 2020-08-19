@@ -14,6 +14,8 @@ import com.google.firebase.firestore.ktx.toObject
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
 import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileInputStream
 
 class UserRepository(
     private val context: Context
@@ -22,6 +24,7 @@ class UserRepository(
     private val db = Firebase.firestore
 
     fun isLoggedIn() = FirebaseAuth.getInstance().currentUser != null
+
 
     fun login(op: () -> Unit) {
         val userRef =
@@ -51,23 +54,22 @@ class UserRepository(
             }
     }
 
-    fun uploadImage(bitmap: Bitmap) {
+    fun uploadImage(file:File) {
         val storageRef = Firebase.storage.reference
-        val userRef = storageRef.child("images/profile.jpg")
+        val imageRef = storageRef.child("images")
 
-        val baos = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos)
-        val data = baos.toByteArray()
-        var uploadTask = userRef.putBytes(data)
+        val stream = FileInputStream(file)
+
+        val uploadTask = imageRef.putStream(stream)
         uploadTask.addOnSuccessListener {
-            val uri = userRef.downloadUrl.addOnSuccessListener {
+            val uri = imageRef.downloadUrl.addOnSuccessListener {
                 val photo = hashMapOf("photoUrl" to it.toString())
                 db.collection("lol_database")
                     .document("${FirebaseAuth.getInstance().currentUser?.uid}")
                     .set(photo, SetOptions.merge())
                     .addOnSuccessListener { Log.i("database", "success") }
                     .addOnFailureListener { Log.i("database", "fail") }
-                Log.i("uploadSuccess", "${userRef.downloadUrl}")
+                Log.i("uploadSuccess", "${it}")
             }
                 .addOnFailureListener { Log.i("database", "FailP Hayyyy") }
         }

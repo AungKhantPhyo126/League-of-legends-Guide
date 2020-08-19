@@ -19,34 +19,25 @@ class ChampionsDetailViewModel(name: String, application: Application) :
     private val database = getDatabase(application)
     private val championsRepository = ChampionsRepository(database)
     private val db = Firebase.firestore
-    val docRef =
-        db.collection("lol_database").document("${FirebaseAuth.getInstance().currentUser?.uid}")
+
     val keyName = name
-
-
-    private val _isFavorite = MutableLiveData<Boolean>()
     val isFavorite: LiveData<Boolean>
-        get() = _isFavorite
+        get() = championsRepository.isfav(keyName)
+
+    fun removefav(name:String){
+        championsRepository.removefav(name)
+    }
+    fun addfav(name: String){
+        championsRepository.addfav(name)
+    }
 
     init {
         viewModelScope.launch {
             championsRepository.refreshDetails(name)
-            isfav()
         }
     }
 
     val champion = championsRepository.getChampion(name)
-    fun isfav() {
-        docRef.get().addOnSuccessListener { document ->
-            val favHeroes = document.data?.get("favoriteList")
-                favHeroes as List<String>
-                if (favHeroes.contains(keyName)) {
-                    _isFavorite.value = true
-                } else {
-                    _isFavorite.value = false
-                }
 
-        }
-    }
 
 }
