@@ -8,6 +8,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.firebase.ui.auth.AuthUI
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.firestore.ktx.toObject
@@ -27,23 +28,29 @@ class UserRepository(
 
 
     fun login(op: () -> Unit) {
-        val userRef =
-            db.collection("lol_database").document("${FirebaseAuth.getInstance().currentUser?.uid}")
-        val name = FirebaseAuth.getInstance().currentUser?.displayName
-        val email = FirebaseAuth.getInstance().currentUser?.email
-        val phone = FirebaseAuth.getInstance().currentUser?.phoneNumber
-        val photo =
-            FirebaseAuth.getInstance().currentUser?.photoUrl?.toString() ?: "https://bit.ly/39GLBSV"
-        val userdata =
-            hashMapOf(
-                "photoUrl" to photo,
-                "name" to name,
-                "email" to email,
-                "phone" to phone,
-                "favoriteList" to listOf<String>()
-            )
-        userRef.set(userdata, SetOptions.merge()).addOnSuccessListener { op() }
+        val rootRef = db.collection("lol_database")
+        val userRef = rootRef.document("${FirebaseAuth.getInstance().currentUser?.uid}")
+        userRef.get().addOnSuccessListener {
+            if (it.exists().not()) {
+                val name = FirebaseAuth.getInstance().currentUser?.displayName
+                val email = FirebaseAuth.getInstance().currentUser?.email
+                val phone = FirebaseAuth.getInstance().currentUser?.phoneNumber
+                val photo =
+                    FirebaseAuth.getInstance().currentUser?.photoUrl?.toString()
+                        ?: "https://bit.ly/39GLBSV"
+                val userdata =
+                    hashMapOf(
+                        "photoUrl" to photo,
+                        "name" to name,
+                        "email" to email,
+                        "phone" to phone,
+                        "favoriteList" to listOf<String>()
+                    )
+                userRef.set(userdata, SetOptions.merge()).addOnSuccessListener { op() }
+            }
+        }
     }
+
 
     fun logout(op: () -> Unit) {
         AuthUI.getInstance()
@@ -54,9 +61,9 @@ class UserRepository(
             }
     }
 
-    fun uploadImage(file:File) {
+    fun uploadImage(file: File) {
         val storageRef = Firebase.storage.reference
-        val imageRef = storageRef.child("images")
+        val imageRef = storageRef.child("users/${FirebaseAuth.getInstance().currentUser?.uid}")
 
         val stream = FileInputStream(file)
 

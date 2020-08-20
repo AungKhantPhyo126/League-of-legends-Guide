@@ -3,6 +3,7 @@ package com.kaito.afinal.championsDetails
 import android.app.Application
 import android.content.ContentValues.TAG
 import android.util.Log
+import android.widget.Toast
 import androidx.lifecycle.*
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
@@ -14,30 +15,28 @@ import com.kaito.afinal.domain.Champions
 import com.kaito.afinal.repository.ChampionsRepository
 import kotlinx.coroutines.launch
 
-class ChampionsDetailViewModel(name: String, application: Application) :
-    AndroidViewModel(application) {
-    private val database = getDatabase(application)
+class ChampionsDetailViewModel(private val name: String,private val app: Application) :
+    AndroidViewModel(app) {
+    private val database = getDatabase(app)
     private val championsRepository = ChampionsRepository(database)
-    private val db = Firebase.firestore
-
-    val keyName = name
-    val isFavorite: LiveData<Boolean>
-        get() = championsRepository.isfav(keyName)
-
-    fun removefav(name:String){
-        championsRepository.removefav(name)
+    fun toggleFavorite(){
+        if (FirebaseAuth.getInstance().currentUser==null){
+            Toast.makeText(
+                app, "Please log in to give favorite!", Toast.LENGTH_LONG
+            ).show()
+        }else{
+           if (champion.value?.favorite==true){
+               championsRepository.removefav(name)
+           }else if (champion.value?.favorite==false){
+               championsRepository.addfav(name)
+           }
+        }
     }
-    fun addfav(name: String){
-        championsRepository.addfav(name)
-    }
-
     init {
         viewModelScope.launch {
             championsRepository.refreshDetails(name)
         }
     }
 
-    val champion = championsRepository.getChampion(name)
-
-
+    val champion = championsRepository.getChampion(name).distinctUntilChanged()
 }

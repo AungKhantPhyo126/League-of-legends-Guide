@@ -10,6 +10,7 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.kaito.afinal.database.ChampionsDatabase
+import com.kaito.afinal.database.DatabaseChampions
 import com.kaito.afinal.database.asDomainModel
 import com.kaito.afinal.domain.Champions
 import com.kaito.afinal.network.LolApi
@@ -22,14 +23,37 @@ import kotlinx.coroutines.withContext
 class ChampionsRepository(private val database: ChampionsDatabase) {
 
     private val db = Firebase.firestore
+    private val rootRef = db.collection("lol_database")
+    private val userRef = rootRef.document("${FirebaseAuth.getInstance().currentUser?.uid}")
+
+
+    private var favoriteNames = mutableListOf<String>()
+    private var championlist = mutableListOf<DatabaseChampions>()
+
 
     suspend fun fetchChampions() {
         withContext(Dispatchers.IO) {
             try {
+
                 val champions = LolApi.retrofitService.getProperties().asDatabase()
-                database.championsDao.insertAll(champions)
+                userRef.get().addOnSuccessListener { snapshot ->
+
+                    if (snapshot != null && snapshot.exists()) {
+                        snapshot.data?.get("favoriteList")?.let {
+                            it as? List<String>
+                        }?.also { favoriteNames ->
+                            GlobalScope.launch(Dispatchers.IO) {
+                                champions.map {
+                                    it.copy(favorite = favoriteNames.contains(it.championsName))
+                                }.also {
+                                    database.championsDao.insertAll(it)
+                                }
+                            }
+                        }
+                    }
+                }
             } catch (e: Throwable) {
-                Log.e("lee", e.message)
+                Log.e("fetchFail", e.message)
             }
         }
     }
@@ -38,31 +62,35 @@ class ChampionsRepository(private val database: ChampionsDatabase) {
         .map { it.asDomainModel() }
 
 
-
-
-
-
-
-
-
-
-
     suspend fun refreshDetails(name: String) {
-        try {
-            val championDetail = LolApi.retrofitService.getSpells(name).asDatabase()
-            database.championsDao.insertChampion(championDetail[0])
-        } catch (e: Throwable) {
-            Log.e("lee", e.message)
+        withContext(Dispatchers.IO) {
+            try {
+                val championDetail = LolApi.retrofitService.getSpells(name).asDatabase()[0]
+                userRef.get().addOnSuccessListener { snapshot ->
+
+                    if (snapshot != null && snapshot.exists()) {
+                        snapshot.data?.get("favoriteList")?.let {
+                            it as? List<String>
+                        }?.also { favoriteNames ->
+                            GlobalScope.launch(Dispatchers.IO) {
+                                championDetail.copy(favorite = favoriteNames.contains(championDetail.championsName))
+                                    .also {
+                                        database.championsDao.insertChampion(it)
+                                    }
+                            }
+                        }
+                    }
+                }
+            } catch (e: Throwable) {
+                Log.e("lee", e.message)
+            }
         }
+
     }
 
     fun getChampion(name: String) = database.championsDao.getChampion(name).map {
         it.asDomainModel()
     }
-
-
-
-
 
 
     fun getFavoriteChampions(): MutableLiveData<List<Champions>> {
@@ -92,38 +120,22 @@ class ChampionsRepository(private val database: ChampionsDatabase) {
         return favoriteList
     }
 
-    fun addfav(name:String){
+    fun addfav(name: String) {
         val docRef =
             db.collection("lol_database").document("${FirebaseAuth.getInstance().currentUser?.uid}")
         docRef.update(
-                    "favoriteList",
-                    FieldValue.arrayUnion(name)
-                )
+            "favoriteList",
+            FieldValue.arrayUnion(name)
+        )
     }
 
-    fun removefav(name: String){
+    fun removefav(name: String) {
         val docRef =
             db.collection("lol_database").document("${FirebaseAuth.getInstance().currentUser?.uid}")
         docRef.update(
-                    "favoriteList",
-                    FieldValue.arrayRemove(name)
-                )
+            "favoriteList",
+            FieldValue.arrayRemove(name)
+        )
     }
 
-    fun isfav(keyName:String):MutableLiveData<Boolean>{
-        val _isFavorite = MutableLiveData<Boolean>()
-        val docRef =
-            db.collection("lol_database").document("${FirebaseAuth.getInstance().currentUser?.uid}")
-        docRef.get().addOnSuccessListener { document ->
-            val favHeroes = document.data?.get("favoriteList")
-            favHeroes as List<String>
-            if (favHeroes.contains(keyName)) {
-                _isFavorite.value = true
-            } else {
-                _isFavorite.value = false
-            }
-
-        }
-        return _isFavorite
-    }
 }

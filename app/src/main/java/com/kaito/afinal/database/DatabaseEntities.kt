@@ -19,7 +19,8 @@ data class DatabaseChampions constructor(
     val roles:String,
     val hp:String,
     val mp:String,
-    val spells:String
+    val spells:String,
+    val favorite:Boolean
 )
 
 fun List<DatabaseChampions>.asDomainModel(): List<Champions> {
@@ -32,7 +33,8 @@ fun List<DatabaseChampions>.asDomainModel(): List<Champions> {
             hp = it.hp,
             mp = it.mp,
             blurb = it.blurb,
-            spell = stringToList(it.spells)
+            spell = stringToList(it.spells),
+            favorite = false
         )
     }
 }
@@ -45,7 +47,8 @@ fun DatabaseChampions.asDomainModel():Champions{
         hp = hp,
         mp = mp,
         blurb = blurb,
-        spell = stringToList(spells)
+        spell = stringToList(spells),
+        favorite = false
     )
 }
 fun stringToList(spells: String):List<Spell>{

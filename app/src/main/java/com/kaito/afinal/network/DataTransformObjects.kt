@@ -53,7 +53,8 @@ fun OverViewDto.asDatabase():List<DatabaseChampions>{
             hp = it.stats.hp.toString(),
             mp = it.stats.mp.toString(),
             blurb = it.blurb,
-            spells = listToString(it.spells)
+            spells = listToString(it.spells),
+            favorite = false
         )
     }
 }

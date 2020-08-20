@@ -59,7 +59,9 @@ class ProfileFragment : Fragment() {
         binding.tvLogout.setOnClickListener {
             viewModel.logout()
         }
-
+        binding.ivChangeProfilePic.setOnClickListener {
+            selectImage(requireContext())
+        }
         binding.tvChangeProfilePic.setOnClickListener {
             selectImage(requireContext())
         }
@@ -85,7 +87,11 @@ class ProfileFragment : Fragment() {
             .circleCrop()
             .into(binding.ivProfilePic)
 
-        binding.tvUserName.text = profile.name
+        if (profile.name==null){
+            binding.tvUserName.text=profile.phone
+        }else{
+            binding.tvUserName.text = profile.name
+        }
         binding.tvPhone.text = profile.phone
         binding.tvEmail.text = profile.email
     }

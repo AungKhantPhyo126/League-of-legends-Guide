@@ -19,6 +19,7 @@ interface VideoDao {
     @Query("SELECT * FROM databasechampions WHERE championsName = :keyName")
     fun getFavoriteByName(keyName:String):DatabaseChampions
 
+
 }
 @Database(entities = [DatabaseChampions::class], version = 1)
 abstract class ChampionsDatabase : RoomDatabase() {

@@ -14,5 +14,6 @@ data class Champions (
     val blurb:String,
     val hp:String,
     val mp:String,
-    val spell:List<Spell>
+    val spell:List<Spell>,
+    val favorite:Boolean
 )
