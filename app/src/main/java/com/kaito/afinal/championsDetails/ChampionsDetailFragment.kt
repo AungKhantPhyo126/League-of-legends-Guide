@@ -65,15 +65,15 @@ class ChampionsDetailFragment : Fragment() {
 
         val spellAdapter = SpellAdapter()
         binding.rvSpells.adapter = spellAdapter
+        animationView?.setMinAndMaxFrame(10, 60)
+
         viewModel.champion.observe(viewLifecycleOwner, Observer {
-            if (it.favorite){
-                animationView?.setMinAndMaxFrame(0, 45)
+            if (it.favorite==true){
                 animationView?.speed = 1f
                 animationView?.playAnimation()
-            }else{
+            }else if (it.favorite==false){
                 animationView?.speed = -1f
                 animationView?.resumeAnimation()
-                animationView?.setMinAndMaxFrame(10, 60)
             }
 //            if (it.favorite) {
 //                animationView?.setMinAndMaxFrame(45, 45)
