@@ -6,13 +6,15 @@ import android.widget.ImageView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.kaito.afinal.R
 import com.kaito.afinal.databinding.ListItemsChampionsBinding
 import com.kaito.afinal.domain.Champions
 import com.kaito.afinal.network.NetworkChampions
 import com.kaito.afinal.network.Spell
-object ChampionDiffCallback: DiffUtil.ItemCallback<Champions>(){
+
+object ChampionDiffCallback : DiffUtil.ItemCallback<Champions>() {
     override fun areItemsTheSame(oldItem: Champions, newItem: Champions): Boolean {
-        return oldItem.championsName==newItem.championsName
+        return oldItem.championsName == newItem.championsName
 
     }
 
@@ -22,22 +24,21 @@ object ChampionDiffCallback: DiffUtil.ItemCallback<Champions>(){
 
 }
 
-class ChampionsAdapter(val onClickListener: OnClickListener) : ListAdapter<Champions,ChampionsAdapter.ItemViewHolder>(ChampionDiffCallback){
-
+class ChampionsAdapter(val onClickListener: OnClickListener) :
+    ListAdapter<Champions, ChampionsAdapter.ItemViewHolder>(ChampionDiffCallback) {
 
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ItemViewHolder {
-       val layoutInflater= LayoutInflater.from(parent.context)
-        val binding=ListItemsChampionsBinding.inflate(layoutInflater,parent,false)
+        val layoutInflater = LayoutInflater.from(parent.context)
+        val binding = ListItemsChampionsBinding.inflate(layoutInflater, parent, false)
         return ItemViewHolder(binding)
     }
 
 
-
     override fun onBindViewHolder(holder: ItemViewHolder, position: Int) {
-        val item=getItem(position)
+        val item = getItem(position)
         holder.itemView.setOnClickListener {
-            onClickListener.onClick(item,holder.binding.imageView2)
+            onClickListener.onClick(item, holder.binding.imageView2)
         }
         holder.bind(item)
 
@@ -45,13 +46,16 @@ class ChampionsAdapter(val onClickListener: OnClickListener) : ListAdapter<Champ
     }
 
 
-    class ItemViewHolder( val binding: ListItemsChampionsBinding): RecyclerView.ViewHolder(binding.root) {
-       fun bind(champions:Champions){
-            binding.champions=champions
-           binding.executePendingBindings()
-       }
+    class ItemViewHolder(val binding: ListItemsChampionsBinding) :
+        RecyclerView.ViewHolder(binding.root) {
+        fun bind(champions: Champions) {
+            binding.champions = champions
+            binding.ivFav.setImageResource(if (champions.favorite) R.drawable.ic_baseline_favorite_24 else R.drawable.ic_baseline_favorite_border_24)
+            binding.executePendingBindings()
+        }
     }
-    class OnClickListener(val clickListener: (champion: Champions,imageView:ImageView) -> Unit) {
-        fun onClick(champion: Champions,imageView:ImageView) = clickListener(champion,imageView)
+
+    class OnClickListener(val clickListener: (champion: Champions, imageView: ImageView) -> Unit) {
+        fun onClick(champion: Champions, imageView: ImageView) = clickListener(champion, imageView)
     }
 }

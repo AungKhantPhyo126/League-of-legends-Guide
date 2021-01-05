@@ -12,26 +12,31 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.kaito.afinal.database.getDatabase
 import com.kaito.afinal.domain.Champions
+import com.kaito.afinal.network.LolApi
 import com.kaito.afinal.repository.ChampionsRepository
 import kotlinx.coroutines.launch
 
-class ChampionsDetailViewModel(private val name: String,private val app: Application) :
-    AndroidViewModel(app) {
+class ChampionsDetailViewModel(
+    private val name: String,
+    private val app: Application
+) : AndroidViewModel(app) {
+
     private val database = getDatabase(app)
-    private val championsRepository = ChampionsRepository(database)
-    fun toggleFavorite(){
-        if (FirebaseAuth.getInstance().currentUser==null){
+    private val apiService = LolApi.getService(app)
+    private val championsRepository = ChampionsRepository(apiService, database)
+
+    fun toggleFavorite() {
+        if (FirebaseAuth.getInstance().currentUser == null) {
             Toast.makeText(
                 app, "Please log in to give favorite!", Toast.LENGTH_LONG
             ).show()
-        }else{
-           if (champion.value?.favorite==true){
-               championsRepository.removefav(name)
-           }else if (champion.value?.favorite==false){
-               championsRepository.addfav(name)
-           }
+        } else {
+            viewModelScope.launch {
+                championsRepository.toggleFav(champion.value!!)
+            }
         }
     }
+
     init {
         viewModelScope.launch {
             championsRepository.refreshDetails(name)
@@ -39,4 +44,6 @@ class ChampionsDetailViewModel(private val name: String,private val app: Applica
     }
 
     val champion = championsRepository.getChampion(name).distinctUntilChanged()
+
+    val isFavorite = champion.map { it.favorite }.distinctUntilChanged()
 }

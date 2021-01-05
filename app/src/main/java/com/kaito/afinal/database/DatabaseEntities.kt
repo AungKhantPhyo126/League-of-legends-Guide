@@ -25,17 +25,7 @@ data class DatabaseChampions constructor(
 
 fun List<DatabaseChampions>.asDomainModel(): List<Champions> {
     return map {
-        Champions(
-            championsName = it.championsName,
-            title = it.title,
-            image = it.image,
-            roles = it.roles,
-            hp = it.hp,
-            mp = it.mp,
-            blurb = it.blurb,
-            spell = stringToList(it.spells),
-            favorite = false
-        )
+        it.asDomainModel()
     }
 }
 fun DatabaseChampions.asDomainModel():Champions{
@@ -48,7 +38,7 @@ fun DatabaseChampions.asDomainModel():Champions{
         mp = mp,
         blurb = blurb,
         spell = stringToList(spells),
-        favorite = false
+        favorite = favorite
     )
 }
 fun stringToList(spells: String):List<Spell>{

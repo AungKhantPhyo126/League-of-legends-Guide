@@ -1,7 +1,10 @@
 package com.kaito.afinal.network
 
+import android.content.Context
+import com.readystatesoftware.chuck.ChuckInterceptor
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import retrofit2.http.GET
@@ -13,9 +16,12 @@ private val moshi = Moshi.Builder()
 
 private const val BASE_URL = "https://ddragon.leagueoflegends.com/cdn/10.12.1/"
 
-private val retrofit = Retrofit.Builder()
+private fun getRetrofit(context: Context) = Retrofit.Builder()
     .addConverterFactory(MoshiConverterFactory.create(moshi))
     .baseUrl(BASE_URL)
+    .client(OkHttpClient.Builder().apply {
+        addInterceptor(ChuckInterceptor(context))
+    }.build())
     .build()
 
 interface LolApiService {
@@ -28,9 +34,8 @@ interface LolApiService {
 }
 
 object LolApi {
-    val retrofitService: LolApiService by lazy {
-        retrofit.create(LolApiService::class.java)
-    }
+
+    fun getService(context: Context) = getRetrofit(context).create(LolApiService::class.java)
 }
 
 

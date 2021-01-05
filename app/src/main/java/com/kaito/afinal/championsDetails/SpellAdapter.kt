@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.annotation.RequiresApi
 import androidx.core.text.HtmlCompat
+import androidx.core.text.parseAsHtml
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -30,7 +31,7 @@ class SpellAdapter :ListAdapter<Spell,SpellAdapter.SpellViewHolder>(SpellDiffCal
             Glide.with(itemView.context).load(url)
                 .into(binding.spellOne)
             binding.tvTitle.text=spell.name
-            binding.tvDesc.text= Html.fromHtml(spell.description, HtmlCompat.FROM_HTML_MODE_LEGACY);
+            binding.tvDesc.text= spell.description.parseAsHtml()
         }
     }
 

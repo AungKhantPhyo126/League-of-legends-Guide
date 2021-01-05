@@ -60,6 +60,7 @@ class ChampionsViewFragment : Fragment() {
                 ChampionsViewFragmentDirections
                     .actionChampionsViewFragmentToChampionsDetailFragment(champion.championsName)
             )
+
         })
         binding.championsList.adapter = adapter
 

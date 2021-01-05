@@ -15,7 +15,8 @@ import kotlinx.coroutines.launch
 class ChampionViewModel(application: Application) : AndroidViewModel(application) {
 
     private val database = getDatabase(application)
-    private val championsRepository = ChampionsRepository(database)
+    private val apiService = LolApi.getService(application)
+    private val championsRepository = ChampionsRepository(apiService, database)
 
     private val roleLive = MutableLiveData<String>("All")
 

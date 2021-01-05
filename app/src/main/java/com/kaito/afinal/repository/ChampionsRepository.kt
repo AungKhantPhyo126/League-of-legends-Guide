@@ -5,6 +5,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Transformations
 import androidx.lifecycle.map
+import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.ktx.firestore
@@ -14,73 +15,45 @@ import com.kaito.afinal.database.DatabaseChampions
 import com.kaito.afinal.database.asDomainModel
 import com.kaito.afinal.domain.Champions
 import com.kaito.afinal.network.LolApi
+import com.kaito.afinal.network.LolApiService
 import com.kaito.afinal.network.asDatabase
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 
-class ChampionsRepository(private val database: ChampionsDatabase) {
+@InternalCoroutinesApi
+class ChampionsRepository(
+    private val retrofitService: LolApiService,
+    private val database: ChampionsDatabase
+) {
 
     private val db = Firebase.firestore
     private val rootRef = db.collection("lol_database")
     private val userRef = rootRef.document("${FirebaseAuth.getInstance().currentUser?.uid}")
 
-
-    private var favoriteNames = mutableListOf<String>()
-    private var championlist = mutableListOf<DatabaseChampions>()
-
-
     suspend fun fetchChampions() {
         withContext(Dispatchers.IO) {
             try {
-
-                val champions = LolApi.retrofitService.getProperties().asDatabase()
-                userRef.get().addOnSuccessListener { snapshot ->
-
-                    if (snapshot != null && snapshot.exists()) {
-                        snapshot.data?.get("favoriteList")?.let {
-                            it as? List<String>
-                        }?.also { favoriteNames ->
-                            GlobalScope.launch(Dispatchers.IO) {
-                                champions.map {
-                                    it.copy(favorite = favoriteNames.contains(it.championsName))
-                                }.also {
-                                    database.championsDao.insertAll(it)
-                                }
-                            }
-                        }
-                    }
-                }
+                val champions = retrofitService.getProperties().asDatabase()
+                database.championsDao.insertAll(champions)
             } catch (e: Throwable) {
                 Log.e("fetchFail", e.message)
             }
         }
     }
 
-    fun getChampions(roles: String) = database.championsDao.getFilteredChampions("%$roles%")
+    fun getChampions(roles: String) = database.championsDao.getChampions("%$roles%")
         .map { it.asDomainModel() }
 
 
     suspend fun refreshDetails(name: String) {
         withContext(Dispatchers.IO) {
             try {
-                val championDetail = LolApi.retrofitService.getSpells(name).asDatabase()[0]
-                userRef.get().addOnSuccessListener { snapshot ->
-
-                    if (snapshot != null && snapshot.exists()) {
-                        snapshot.data?.get("favoriteList")?.let {
-                            it as? List<String>
-                        }?.also { favoriteNames ->
-                            GlobalScope.launch(Dispatchers.IO) {
-                                championDetail.copy(favorite = favoriteNames.contains(championDetail.championsName))
-                                    .also {
-                                        database.championsDao.insertChampion(it)
-                                    }
-                            }
-                        }
-                    }
-                }
+                val new = retrofitService.getSpells(name).asDatabase()[0]
+                val old = database.championsDao.getChampion(name)
+                val merged = new.copy(favorite = old.favorite)
+                database.championsDao.insert(merged)
             } catch (e: Throwable) {
                 Log.e("lee", e.message)
             }
@@ -88,54 +61,41 @@ class ChampionsRepository(private val database: ChampionsDatabase) {
 
     }
 
-    fun getChampion(name: String) = database.championsDao.getChampion(name).map {
+    fun getChampion(name: String) = database.championsDao.getChampionLive(name).map {
         it.asDomainModel()
     }
 
+    fun getFavoriteChampions(): LiveData<List<Champions>> {
+        return database.championsDao.getFavoriteChampions()
+            .map { it.asDomainModel() }
+    }
 
-    fun getFavoriteChampions(): MutableLiveData<List<Champions>> {
-        val favoriteList = MutableLiveData<List<Champions>>()
-        val docRef =
-            db.collection("lol_database").document("${FirebaseAuth.getInstance().currentUser?.uid}")
-        docRef.addSnapshotListener { snapshot, e ->
-
-            if (e != null) {
-                return@addSnapshotListener
-            }
-
-            if (snapshot != null && snapshot.exists()) {
-                GlobalScope.launch {
-                    val list = snapshot.data?.get("favoriteList") as List<String>
-                    list.map {
-                        database.championsDao.getFavoriteByName(it).let { entity ->
-                            entity.asDomainModel()
-                        }
-                    }.also {
-                        favoriteList.postValue(it)
-                    }
-                }
-            } else {
-            }
+    suspend fun toggleFav(champions: Champions) {
+        if (champions.favorite) {
+            removefav(champions.championsName)
+        } else {
+            addfav(champions.championsName)
         }
-        return favoriteList
     }
 
-    fun addfav(name: String) {
-        val docRef =
-            db.collection("lol_database").document("${FirebaseAuth.getInstance().currentUser?.uid}")
-        docRef.update(
-            "favoriteList",
-            FieldValue.arrayUnion(name)
-        )
+    private suspend fun addfav(name: String) {
+        userRef.update("favoriteList", FieldValue.arrayUnion(name)).await()
+        database.championsDao.toggleFavorite(name, true)
     }
 
-    fun removefav(name: String) {
-        val docRef =
-            db.collection("lol_database").document("${FirebaseAuth.getInstance().currentUser?.uid}")
-        docRef.update(
-            "favoriteList",
-            FieldValue.arrayRemove(name)
-        )
+    private suspend fun removefav(name: String) {
+        userRef.update("favoriteList", FieldValue.arrayRemove(name)).await()
+        database.championsDao.toggleFavorite(name, false)
     }
+
+    suspend fun <T> Task<T>.await() = suspendCoroutine<T> { t ->
+        addOnSuccessListener {
+            t.resume(it)
+        }
+        addOnFailureListener {
+            t.resumeWithException(it)
+        }
+    }
+
 
 }
