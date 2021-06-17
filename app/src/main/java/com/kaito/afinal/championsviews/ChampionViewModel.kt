@@ -7,11 +7,9 @@ import com.kaito.afinal.domain.Champions
 import com.kaito.afinal.network.NetworkChampions
 import com.kaito.afinal.network.LolApi
 import com.kaito.afinal.repository.ChampionsRepository
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 
+@InternalCoroutinesApi
 class ChampionViewModel(application: Application) : AndroidViewModel(application) {
 
     private val database = getDatabase(application)

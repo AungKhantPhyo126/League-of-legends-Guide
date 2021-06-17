@@ -20,7 +20,9 @@ import com.kaito.afinal.championsviews.ChampionsAdapter
 import com.kaito.afinal.championsviews.ChampionsViewFragmentDirections
 import com.kaito.afinal.databinding.FragmentChampionsdetailBinding
 import com.kaito.afinal.databinding.FragmentFavoriteBinding
+import kotlinx.coroutines.InternalCoroutinesApi
 
+@InternalCoroutinesApi
 class FavouriteFragment :Fragment(){
     private lateinit var binding:FragmentFavoriteBinding
     override fun onCreateView(

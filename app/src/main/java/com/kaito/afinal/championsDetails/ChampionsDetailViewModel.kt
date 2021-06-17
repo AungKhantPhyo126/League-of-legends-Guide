@@ -14,8 +14,10 @@ import com.kaito.afinal.database.getDatabase
 import com.kaito.afinal.domain.Champions
 import com.kaito.afinal.network.LolApi
 import com.kaito.afinal.repository.ChampionsRepository
+import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.launch
 
+@OptIn(InternalCoroutinesApi::class)
 class ChampionsDetailViewModel(
     private val name: String,
     private val app: Application
@@ -23,8 +25,10 @@ class ChampionsDetailViewModel(
 
     private val database = getDatabase(app)
     private val apiService = LolApi.getService(app)
+    @OptIn(InternalCoroutinesApi::class)
     private val championsRepository = ChampionsRepository(apiService, database)
 
+    @OptIn(InternalCoroutinesApi::class)
     fun toggleFavorite() {
         if (FirebaseAuth.getInstance().currentUser == null) {
             Toast.makeText(

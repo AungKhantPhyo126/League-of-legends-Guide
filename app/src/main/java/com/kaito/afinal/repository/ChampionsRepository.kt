@@ -22,7 +22,6 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
-@InternalCoroutinesApi
 class ChampionsRepository(
     private val retrofitService: LolApiService,
     private val database: ChampionsDatabase
@@ -38,7 +37,7 @@ class ChampionsRepository(
                 val champions = retrofitService.getProperties().asDatabase()
                 database.championsDao.insertAll(champions)
             } catch (e: Throwable) {
-                Log.e("fetchFail", e.message)
+                Log.e("fetchFail", e.message.orEmpty())
             }
         }
     }
@@ -55,7 +54,7 @@ class ChampionsRepository(
                 val merged = new.copy(favorite = old.favorite)
                 database.championsDao.insert(merged)
             } catch (e: Throwable) {
-                Log.e("lee", e.message)
+                Log.e("lee", e.message.orEmpty())
             }
         }
 

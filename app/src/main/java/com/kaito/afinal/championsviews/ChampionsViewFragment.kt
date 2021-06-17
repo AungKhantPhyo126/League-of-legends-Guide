@@ -27,11 +27,15 @@ import com.kaito.afinal.DarkModeHelper
 import com.kaito.afinal.R
 import com.kaito.afinal.databinding.FragmentChampionsBinding
 import kotlinx.android.synthetic.main.fragment_champions.*
+import kotlinx.coroutines.InternalCoroutinesApi
 
 
+@InternalCoroutinesApi
 class ChampionsViewFragment : Fragment() {
 
+    @OptIn(InternalCoroutinesApi::class)
     val viewModel: ChampionViewModel by viewModels()
+
     private lateinit var binding: FragmentChampionsBinding
     var currentFilter = "All"
 

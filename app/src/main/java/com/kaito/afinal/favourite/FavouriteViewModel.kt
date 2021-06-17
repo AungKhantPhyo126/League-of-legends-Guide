@@ -8,6 +8,7 @@ import com.google.firebase.ktx.Firebase
 import com.kaito.afinal.database.getDatabase
 import com.kaito.afinal.network.LolApi
 import com.kaito.afinal.repository.ChampionsRepository
+import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.launch
 
 class FavouriteViewModel(application: Application) : AndroidViewModel(application) {
